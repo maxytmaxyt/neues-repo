@@ -9,11 +9,12 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.components.textinput.TextInput;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.components.label.Label;
+import net.dv8tion.jda.api.modals.Modal;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class InteractionListener extends ListenerAdapter {
             case "lock"     -> handleLock(event, guild, channel, data);
             case "unlock"   -> handleUnlock(event, guild, channel, data);
             case "transfer" -> handleTransferPrompt(event, guild, channel);
-            case "kick"     -> handleKickPrompt(event, guild, channel, data);
+            case "kick"     -> handleKickPrompt(event, guild, channel);
             case "limit"    -> handleLimitPrompt(event, channelId);
             default         -> event.reply("❌ Unbekannte Aktion.").setEphemeral(true).queue();
         }
@@ -91,17 +92,18 @@ public class InteractionListener extends ListenerAdapter {
         String id = event.getComponentId();
         if (!id.startsWith(PREFIX)) return;
 
-        String[] parts = id.split(":", 3);
-        if (parts.length < 3) return;
+        // id format: tc:select:<action>:<channelId>
+        String[] parts = id.split(":", 4);
+        if (parts.length < 4) return;
 
-        String action    = parts[1];
-        long   channelId = parseLong(parts[2]);
+        String action    = parts[2];
+        long   channelId = parseLong(parts[3]);
         if (channelId == -1) return;
 
         Guild guild = event.getGuild();
         if (guild == null) return;
 
-        TempChannelData data = service.getChannelData(channelId);
+        TempChannelData data    = service.getChannelData(channelId);
         VoiceChannel    channel = guild.getVoiceChannelById(channelId);
 
         if (data == null || channel == null) {
@@ -119,8 +121,8 @@ public class InteractionListener extends ListenerAdapter {
             return;
         }
 
-        long targetId = parseLong(event.getValues().get(0));
-        Member target = guild.getMemberById(targetId);
+        long   targetId = parseLong(event.getValues().get(0));
+        Member target   = guild.getMemberById(targetId);
 
         if (target == null) {
             event.reply("❌ Mitglied nicht gefunden.").setEphemeral(true).queue();
@@ -128,7 +130,7 @@ public class InteractionListener extends ListenerAdapter {
         }
 
         switch (action) {
-            case "select:kick" -> {
+            case "kick" -> {
                 if (!channel.getMembers().contains(target)) {
                     event.reply("❌ " + target.getEffectiveName() + " ist nicht im Kanal.")
                             .setEphemeral(true).queue();
@@ -138,7 +140,7 @@ public class InteractionListener extends ListenerAdapter {
                 event.reply("✅ " + target.getAsMention() + " wurde aus dem Kanal entfernt.")
                         .setEphemeral(true).queue();
             }
-            case "select:transfer" -> {
+            case "transfer" -> {
                 if (!channel.getMembers().contains(target)) {
                     event.reply("❌ " + target.getEffectiveName() + " ist nicht im Kanal.")
                             .setEphemeral(true).queue();
@@ -242,8 +244,8 @@ public class InteractionListener extends ListenerAdapter {
                 .queue();
     }
 
-    private void handleKickPrompt(ButtonInteractionEvent event, Guild guild,
-                                   VoiceChannel channel, TempChannelData data) {
+    private void handleKickPrompt(ButtonInteractionEvent event,
+                                   Guild guild, VoiceChannel channel) {
         long callerId = event.getUser().getIdLong();
         List<Member> others = channel.getMembers().stream()
                 .filter(m -> m.getIdLong() != callerId)
@@ -269,7 +271,9 @@ public class InteractionListener extends ListenerAdapter {
     }
 
     private void handleLimitPrompt(ButtonInteractionEvent event, long channelId) {
-        TextInput input = TextInput.create("new_limit", "Neues Nutzer-Limit (1–99)", TextInputStyle.SHORT)
+        // In JDA 6, TextInput.create() takes only (id, style).
+        // The visible label is supplied via Label.of("label text", textInput).
+        TextInput input = TextInput.create("new_limit", TextInputStyle.SHORT)
                 .setPlaceholder("z. B. 4")
                 .setMinLength(1)
                 .setMaxLength(2)
@@ -277,7 +281,7 @@ public class InteractionListener extends ListenerAdapter {
                 .build();
 
         Modal modal = Modal.create("tc:modal:limit:" + channelId, "Nutzer-Limit ändern")
-                .addComponents(ActionRow.of(input))
+                .addComponents(Label.of("Neues Nutzer-Limit (1–99)", input))
                 .build();
 
         event.replyModal(modal).queue();
