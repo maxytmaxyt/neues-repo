@@ -1,0 +1,76 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@10.9.4
+2 info using node@v21.7.3
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/home/container/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm install @octokit/rest octokit
+7 verbose argv "install" "@octokit/rest" "octokit"
+8 verbose logfile logs-max:10 dir:/home/container/.npm/_logs/2026-03-08T00_11_55_040Z-
+9 verbose logfile /home/container/.npm/_logs/2026-03-08T00_11_55_040Z-debug-0.log
+10 silly logfile done cleaning log files
+11 silly packumentCache heap:321388544 maxSize:80347136 maxEntrySize:40173568
+12 silly idealTree buildDeps
+13 silly fetch manifest @octokit/rest@^22.0.1
+14 silly packumentCache full:https://registry.npmjs.org/@octokit%2frest cache-miss
+15 http fetch GET 200 https://registry.npmjs.org/npm 138ms
+16 http fetch GET 200 https://registry.npmjs.org/@octokit%2frest 164ms (cache miss)
+17 silly packumentCache full:https://registry.npmjs.org/@octokit%2frest set size:undefined disposed:false
+18 silly fetch manifest octokit@^5.0.5
+19 silly packumentCache full:https://registry.npmjs.org/octokit cache-miss
+20 http fetch GET 200 https://registry.npmjs.org/octokit 25ms (cache miss)
+21 silly packumentCache full:https://registry.npmjs.org/octokit set size:undefined disposed:false
+22 silly placeDep ROOT @octokit/rest@22.0.1 REPLACE for:  want: ^22.0.1
+23 silly placeDep ROOT octokit@5.0.5 REPLACE for:  want: ^5.0.5
+24 silly reify moves {}
+25 silly audit bulk request {
+25 silly audit   '@octokit/app': [ '16.1.2' ],
+25 silly audit   '@octokit/auth-app': [ '8.2.0' ],
+25 silly audit   '@octokit/auth-oauth-app': [ '9.0.3' ],
+25 silly audit   '@octokit/auth-oauth-device': [ '8.0.3' ],
+25 silly audit   '@octokit/auth-oauth-user': [ '6.0.2' ],
+25 silly audit   '@octokit/auth-token': [ '6.0.0' ],
+25 silly audit   '@octokit/auth-unauthenticated': [ '7.0.3' ],
+25 silly audit   '@octokit/core': [ '7.0.6' ],
+25 silly audit   '@octokit/endpoint': [ '11.0.3' ],
+25 silly audit   '@octokit/graphql': [ '9.0.3' ],
+25 silly audit   '@octokit/oauth-app': [ '8.0.3' ],
+25 silly audit   '@octokit/oauth-authorization-url': [ '8.0.0' ],
+25 silly audit   '@octokit/oauth-methods': [ '6.0.2' ],
+25 silly audit   '@octokit/openapi-types': [ '27.0.0' ],
+25 silly audit   '@octokit/openapi-webhooks-types': [ '12.1.0' ],
+25 silly audit   '@octokit/plugin-paginate-graphql': [ '6.0.0' ],
+25 silly audit   '@octokit/plugin-paginate-rest': [ '14.0.0' ],
+25 silly audit   '@octokit/plugin-request-log': [ '6.0.0' ],
+25 silly audit   '@octokit/plugin-rest-endpoint-methods': [ '17.0.0' ],
+25 silly audit   '@octokit/plugin-retry': [ '8.1.0' ],
+25 silly audit   '@octokit/plugin-throttling': [ '11.0.3' ],
+25 silly audit   '@octokit/request': [ '10.0.8' ],
+25 silly audit   '@octokit/request-error': [ '7.1.0' ],
+25 silly audit   '@octokit/types': [ '16.0.0' ],
+25 silly audit   '@octokit/webhooks': [ '14.2.0' ],
+25 silly audit   '@octokit/webhooks-methods': [ '6.0.0' ],
+25 silly audit   '@types/aws-lambda': [ '8.10.161' ],
+25 silly audit   'before-after-hook': [ '4.0.0' ],
+25 silly audit   bottleneck: [ '2.19.5' ],
+25 silly audit   'fast-content-type-parse': [ '3.0.0' ],
+25 silly audit   'json-with-bigint': [ '3.5.7' ],
+25 silly audit   'toad-cache': [ '3.7.0' ],
+25 silly audit   'universal-github-app-jwt': [ '2.2.2' ],
+25 silly audit   'universal-user-agent': [ '7.0.3' ],
+25 silly audit   '@octokit/rest': [ '22.0.1' ],
+25 silly audit   octokit: [ '5.0.5' ]
+25 silly audit }
+26 http fetch POST 200 https://registry.npmjs.org/-/npm/v1/security/advisories/bulk 191ms
+27 silly audit report {}
+28 verbose cwd /home/container
+29 verbose os Linux 6.17.9-1-pve
+30 verbose node v21.7.3
+31 verbose npm  v10.9.4
+32 notice
+32 notice New [31mmajor[39m version of npm available! [31m10.9.4[39m -> [34m11.11.0[39m
+32 notice Changelog: [34mhttps://github.com/npm/cli/releases/tag/v11.11.0[39m
+32 notice To update run: [4mnpm install -g npm@11.11.0[24m
+32 notice  { force: true, [Symbol(proc-log.meta)]: true }
+33 verbose exit 0
+34 info ok
