@@ -48,4 +48,4 @@ jobs:
         with:
           name: shadow-jar
           path: build/libs/*.jar
-          if-no-files-found: info
+          if-no-files-found: warn
