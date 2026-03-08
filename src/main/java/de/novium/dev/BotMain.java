@@ -12,7 +12,6 @@ import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,32 +22,28 @@ public class BotMain {
     private static final Logger logger = LoggerFactory.getLogger(BotMain.class);
 
     public static void main(String[] args) {
-        logger.info("Starting Discord TempChannel Bot...");
+        logger.info("Bot wird gestartet...");
 
-        // ── Configuration ────────────────────────────────────────────────
         BotConfig config;
         try {
             config = BotConfig.load("bot.properties");
         } catch (Exception e) {
-            logger.error("Failed to load configuration: {}", e.getMessage());
+            logger.error("Konfiguration konnte nicht geladen werden: {}", e.getMessage());
             System.exit(1);
             return;
         }
 
-        // ── Database ─────────────────────────────────────────────────────
         Database database;
         try {
             database = new Database();
         } catch (Exception e) {
-            logger.error("Failed to initialise database: {}", e.getMessage());
+            logger.error("Datenbankverbindung fehlgeschlagen: {}", e.getMessage());
             System.exit(1);
             return;
         }
 
-        // ── Services ──────────────────────────────────────────────────────
         PanelManager panelManager = new PanelManager(config.getPanelChannelId());
 
-        // JDA must be built before TempChannelService (we pass it along)
         JDA jda;
         try {
             jda = JDABuilder.createDefault(config.getToken())
@@ -62,42 +57,37 @@ public class BotMain {
                     ))
                     .build();
         } catch (Exception e) {
-            logger.error("Failed to build JDA: {}", e.getMessage());
+            logger.error("JDA konnte nicht gestartet werden: {}", e.getMessage());
             System.exit(1);
             return;
         }
 
-        TempChannelService tempChannelService = new TempChannelService(jda, config, database, panelManager);
+        TempChannelService service = new TempChannelService(jda, config, database, panelManager);
+        jda.addEventListener(new VoiceStateListener(service));
+        jda.addEventListener(new InteractionListener(service));
 
-        // ── Listeners ─────────────────────────────────────────────────────
-        jda.addEventListener(new VoiceStateListener(tempChannelService));
-        jda.addEventListener(new InteractionListener(tempChannelService));
-
-        // ── Wait for JDA ready, then initialise channels ──────────────────
         try {
             jda.awaitReady();
         } catch (InterruptedException e) {
-            logger.error("Startup interrupted", e);
+            logger.error("Startup unterbrochen", e);
             Thread.currentThread().interrupt();
             return;
         }
 
         Guild guild = jda.getGuildById(config.getGuildId());
         if (guild == null) {
-            logger.error("Guild {} not found! Check guild.id in bot.properties", config.getGuildId());
+            logger.error("Guild {} nicht gefunden! guild.id in bot.properties prüfen", config.getGuildId());
             jda.shutdown();
             return;
         }
 
-        tempChannelService.initialize(guild);
-
+        service.initialize(guild);
         jda.getPresence().setActivity(Activity.watching("Temp Channels 🔊"));
-        logger.info("Bot is ready — managing temp channels in guild '{}'", guild.getName());
+        logger.info("Bot ist bereit auf Server '{}'", guild.getName());
 
-        // ── Graceful shutdown hook ─────────────────────────────────────────
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Shutting down...");
-            tempChannelService.shutdown();
+            logger.info("Bot wird beendet...");
+            service.shutdown();
             jda.shutdown();
         }, "shutdown-hook"));
     }
