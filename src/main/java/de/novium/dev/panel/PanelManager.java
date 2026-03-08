@@ -7,8 +7,8 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class PanelManager {
 
     /**
      * Sends a new panel message for the given channel and stores its ID
-     * in {@code data}. Also persists the state via the caller.
+     * in {@code data}.
      */
     public void createPanel(Guild guild, VoiceChannel channel, TempChannelData data) {
         TextChannel panelChannel = guild.getTextChannelById(panelChannelId);
