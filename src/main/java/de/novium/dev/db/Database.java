@@ -18,7 +18,7 @@ import java.util.List;
 public class Database {
 
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
-    private static final String DB_URL = "jdbc:sqlite:tempchannels.db";
+    private static final String DB_URL = "jdbc:sqlite:database.db";
 
     private final Connection connection;
 
