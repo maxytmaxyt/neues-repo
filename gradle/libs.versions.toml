@@ -9,7 +9,7 @@ slf4j-api = "2.0.17"
 net-dv8tion-jda = "6.3.1"
 
 exposed = "1.0.0"
-sqlite-jdbc = "3.51.2.0"
+sqlite-jdbc = "3.45.1.0"
 mysql-connector = "9.6.0"
 
 bot-properties = "1.2.0"
