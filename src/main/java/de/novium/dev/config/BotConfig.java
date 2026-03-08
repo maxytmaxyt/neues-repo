@@ -60,7 +60,8 @@ public class BotConfig {
      * limit of 50 channels per category.
      */
     public int getCategoryMaxChannels() {
-        String raw = props.get("category.max.channels");
+        // BotProperties.get() returns Optional<String> in version 1.2.0
+        String raw = props.get("category.max.channels").orElse(null);
         if (raw == null || raw.isBlank()) return 45;
         try {
             return Integer.parseInt(raw.trim());
@@ -72,7 +73,7 @@ public class BotConfig {
 
     /** Optional: role IDs that are always allowed to join locked channels. */
     public List<Long> getBypassRoleIds() {
-        String raw = props.get("bypass.role.ids");
+        String raw = props.get("bypass.role.ids").orElse(null);
         if (raw == null || raw.isBlank()) return List.of();
         return Arrays.stream(raw.split(","))
                 .map(String::trim)
