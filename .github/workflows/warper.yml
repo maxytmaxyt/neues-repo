@@ -1,0 +1,39 @@
+name: Update Gradle Wrapper
+
+on:
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  update-wrapper:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Needed to push changes back to the repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version latest
+        # Note: This uses the pre-installed gradle on the runner to bootstrap the wrapper
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.properties gradlew gradlew.bat
+          
+          # Only commit and push if there are actual changes
+          if git diff --staged --quiet; then
+            echo "No changes to the Gradle Wrapper."
+          else
+            git commit -m "chore: update gradle wrapper to latest version"
+            git push
+          fi
