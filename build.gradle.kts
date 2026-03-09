@@ -13,15 +13,6 @@ java.sourceCompatibility = JavaVersion.VERSION_21
 
 repositories {
     mavenCentral()
-
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/maxytmaxyt/bot-properties")
-        credentials {
-            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
 }
 
 dependencies {
@@ -33,8 +24,6 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.mysql.connector)
     implementation(libs.sqlite.jdbc)
-
-    implementation(libs.bot.properties)
 
     implementation(libs.jackson.databind)
 }
