@@ -3,6 +3,7 @@ package de.novium.dev.tempchannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -16,17 +17,12 @@ public class TempChannelData {
     private final long channelId;
     private final TempChannelType type;
 
-    /**
-     * false  = channel is free (nobody inside, waiting for first user)
-     * true   = channel is active (at least one user has joined)
-     *
-     * The transition false→true is done via compareAndSet, so only one
-     * thread can "win" the activation even under heavy concurrent load.
-     */
     private final AtomicBoolean activated = new AtomicBoolean(false);
 
-    private final AtomicLong creatorId = new AtomicLong(0);
-    private final AtomicBoolean locked  = new AtomicBoolean(false);
+    private final AtomicLong    creatorId    = new AtomicLong(0);
+    private final AtomicBoolean locked       = new AtomicBoolean(false);
+
+    private final AtomicInteger channelNumber = new AtomicInteger(0);
 
     /** Members who are allowed to join even when the channel is locked. */
     private final Set<Long> whitelist = ConcurrentHashMap.newKeySet();
@@ -39,7 +35,7 @@ public class TempChannelData {
         this.type      = type;
     }
 
-    // ── Activation / deactivation ─────────────────────────────────────────
+
 
     /**
      * Tries to activate the channel for the given creator.
@@ -72,33 +68,35 @@ public class TempChannelData {
         return activated.get();
     }
 
-    // ── Getters & simple setters ──────────────────────────────────────────
 
-    public long getChannelId()     { return channelId; }
-    public TempChannelType getType() { return type; }
-    public long getCreatorId()     { return creatorId.get(); }
-    public boolean isLocked()      { return locked.get(); }
-    public Set<Long> getWhitelist(){ return whitelist; }
-    public String getPanelMessageId() { return panelMessageId; }
 
-    public void setCreatorId(long id)          { creatorId.set(id); }
-    public void setLocked(boolean value)       { locked.set(value); }
-    public void setPanelMessageId(String msgId){ panelMessageId = msgId; }
+    public long            getChannelId()      { return channelId; }
+    public TempChannelType getType()           { return type; }
+    public long            getCreatorId()      { return creatorId.get(); }
+    public boolean         isLocked()          { return locked.get(); }
+    public Set<Long>       getWhitelist()      { return whitelist; }
+    public String          getPanelMessageId() { return panelMessageId; }
+    public int             getChannelNumber()  { return channelNumber.get(); }
 
-    // ── Whitelist helpers ─────────────────────────────────────────────────
+    public void setCreatorId(long id)            { creatorId.set(id); }
+    public void setLocked(boolean value)         { locked.set(value); }
+    public void setPanelMessageId(String msgId)  { panelMessageId = msgId; }
+    public void setChannelNumber(int number)     { channelNumber.set(number); }
 
-    public void addToWhitelist(long memberId)      { whitelist.add(memberId); }
-    public void removeFromWhitelist(long memberId) { whitelist.remove(memberId); }
-    public boolean isWhitelisted(long memberId)    { return whitelist.contains(memberId); }
 
-    /** Serialises the whitelist to a comma-separated string for DB storage. */
+
+    public void    addToWhitelist(long memberId)      { whitelist.add(memberId); }
+    public void    removeFromWhitelist(long memberId) { whitelist.remove(memberId); }
+    public boolean isWhitelisted(long memberId)       { return whitelist.contains(memberId); }
+
+
     public String getWhitelistAsString() {
         return whitelist.stream()
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
     }
 
-    /** Restores the whitelist from a serialised DB string. */
+
     public void loadWhitelistFromString(String raw) {
         whitelist.clear();
         if (raw == null || raw.isBlank()) return;
@@ -113,6 +111,7 @@ public class TempChannelData {
     public String toString() {
         return "TempChannelData{channelId=" + channelId
                 + ", type=" + type
+                + ", number=" + channelNumber.get()
                 + ", activated=" + activated.get()
                 + ", locked=" + locked.get() + "}";
     }
