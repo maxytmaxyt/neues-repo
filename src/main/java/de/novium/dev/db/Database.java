@@ -25,15 +25,16 @@ public class Database {
     public Database() {
         connection = connect();
         createTableIfNotExists();
+        migrateSchema();
     }
 
     private Connection connect() {
         try {
             Connection conn = DriverManager.getConnection(DB_URL);
-            logger.info("Connected to SQLite database");
+            logger.info("Verbunden mit SQLite-Datenbank");
             return conn;
         } catch (SQLException e) {
-            logger.error("Failed to connect to SQLite database", e);
+            logger.error("Datenbankverbindung fehlgeschlagen", e);
             throw new RuntimeException("Database connection failed", e);
         }
     }
@@ -47,14 +48,30 @@ public class Database {
                     activated       INTEGER NOT NULL DEFAULT 0,
                     locked          INTEGER NOT NULL DEFAULT 0,
                     whitelist       TEXT,
-                    panel_msg_id    TEXT
+                    panel_msg_id    TEXT,
+                    channel_number  INTEGER NOT NULL DEFAULT 0
                 );
                 """;
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
         } catch (SQLException e) {
-            logger.error("Failed to create temp_channels table", e);
+            logger.error("Tabelle konnte nicht erstellt werden", e);
             throw new RuntimeException("Table creation failed", e);
+        }
+    }
+
+    /**
+     * Adds the {@code channel_number} column to existing databases that were
+     * created before this column was introduced. SQLite doesn't support
+     * IF NOT EXISTS for ALTER TABLE, so we catch the error gracefully.
+     */
+    private void migrateSchema() {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("ALTER TABLE temp_channels ADD COLUMN channel_number INTEGER NOT NULL DEFAULT 0");
+            logger.info("Schema-Migration: Spalte 'channel_number' hinzugefügt");
+        } catch (SQLException e) {
+            // Column already exists – this is the normal case after first migration
+            logger.debug("Schema-Migration: 'channel_number' bereits vorhanden, übersprungen");
         }
     }
 
@@ -63,20 +80,21 @@ public class Database {
     public synchronized void save(TempChannelData data) {
         String sql = """
                 INSERT OR REPLACE INTO temp_channels
-                    (channel_id, creator_id, type_name, activated, locked, whitelist, panel_msg_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (channel_id, creator_id, type_name, activated, locked, whitelist, panel_msg_id, channel_number)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setLong(1, data.getChannelId());
-            ps.setLong(2, data.getCreatorId());
+            ps.setLong(1,   data.getChannelId());
+            ps.setLong(2,   data.getCreatorId());
             ps.setString(3, data.getType().name());
-            ps.setInt(4, data.isActivated() ? 1 : 0);
-            ps.setInt(5, data.isLocked() ? 1 : 0);
+            ps.setInt(4,    data.isActivated() ? 1 : 0);
+            ps.setInt(5,    data.isLocked() ? 1 : 0);
             ps.setString(6, data.getWhitelistAsString());
             ps.setString(7, data.getPanelMessageId());
+            ps.setInt(8,    data.getChannelNumber());
             ps.executeUpdate();
         } catch (SQLException e) {
-            logger.error("Failed to save temp channel {}", data.getChannelId(), e);
+            logger.error("Fehler beim Speichern von Kanal {}", data.getChannelId(), e);
         }
     }
 
@@ -86,7 +104,7 @@ public class Database {
             ps.setLong(1, channelId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            logger.error("Failed to delete temp channel {} from database", channelId, e);
+            logger.error("Fehler beim Löschen von Kanal {} aus der Datenbank", channelId, e);
         }
     }
 
@@ -110,7 +128,7 @@ public class Database {
                 TempChannelType type = TempChannelType.fromName(typeName);
 
                 if (type == null) {
-                    logger.warn("Unknown channel type '{}' for channel {}, skipping", typeName, channelId);
+                    logger.warn("Unbekannter Channel-Typ '{}' für Kanal {}, wird übersprungen", typeName, channelId);
                     continue;
                 }
 
@@ -119,19 +137,19 @@ public class Database {
                 data.setLocked(rs.getInt("locked") == 1);
                 data.loadWhitelistFromString(rs.getString("whitelist"));
                 data.setPanelMessageId(rs.getString("panel_msg_id"));
+                data.setChannelNumber(rs.getInt("channel_number"));
 
                 if (rs.getInt("activated") == 1) {
-                    // Restore activated state without triggering the compareAndSet logic
                     data.activate(data.getCreatorId());
                 }
 
                 result.add(data);
             }
         } catch (SQLException e) {
-            logger.error("Failed to load temp channels from database", e);
+            logger.error("Fehler beim Laden der Kanäle aus der Datenbank", e);
         }
 
-        logger.info("Loaded {} temp channel(s) from database", result.size());
+        logger.info("{} Kanal/Kanäle aus der Datenbank geladen", result.size());
         return result;
     }
 }
