@@ -1,52 +1,68 @@
 package de.novium.dev.config;
 
-import de.max.botproperties.BotProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 /**
- * Typed wrapper around {@link BotProperties}.
+ * Typed wrapper around Java's built-in {@link Properties}.
  * All configuration values are read once on startup.
  */
 public class BotConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(BotConfig.class);
 
-    private final BotProperties props;
+    private final Properties props;
 
-    public BotConfig(BotProperties props) {
+    public BotConfig(Properties props) {
         this.props = props;
     }
 
     public static BotConfig load(String filename) {
-        BotProperties props = BotProperties.load(filename);
-        logger.info("Configuration loaded from '{}'", filename);
+        Properties props = new Properties();
+        try (InputStream is = new FileInputStream(filename)) {
+            props.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Konfigurationsdatei '" + filename + "' konnte nicht geladen werden", e);
+        }
+        logger.info("Konfiguration geladen aus '{}'", filename);
         return new BotConfig(props);
     }
 
-    // ── Required values ───────────────────────────────────────────────────
 
+
+    private String getOrThrow(String key) {
+        String value = props.getProperty(key);
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Pflicht-Property '" + key + "' fehlt in der Konfiguration");
+        }
+        return value.trim();
+    }
+
+    private String getOptional(String key) {
+        String value = props.getProperty(key);
+        return (value != null && !value.isBlank()) ? value.trim() : null;
+    }
     public String getToken() {
-        return props.getOrThrow("token");
+        return getOrThrow("token");
     }
 
     public long getGuildId() {
-        return Long.parseLong(props.getOrThrow("guild.id"));
+        return Long.parseLong(getOrThrow("guild.id"));
     }
 
     public long getPanelChannelId() {
-        return Long.parseLong(props.getOrThrow("panel.channel.id"));
+        return Long.parseLong(getOrThrow("panel.channel.id"));
     }
 
-    /**
-     * Returns the list of category IDs to use for temp channels, in priority order.
-     * When the first category is full the bot moves on to the next.
-     */
     public List<Long> getCategoryIds() {
-        String raw = props.getOrThrow("categories");
+        String raw = getOrThrow("categories");
         return Arrays.stream(raw.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -54,27 +70,20 @@ public class BotConfig {
                 .toList();
     }
 
-    /**
-     * Maximum number of channels per category before the bot switches
-     * to the next one. Defaults to 45 to stay well below Discord's hard
-     * limit of 50 channels per category.
-     */
     public int getCategoryMaxChannels() {
-        // BotProperties.get() returns Optional<String> in version 1.2.0
-        String raw = props.get("category.max.channels").orElse(null);
-        if (raw == null || raw.isBlank()) return 45;
+        String raw = getOptional("category.max.channels");
+        if (raw == null) return 45;
         try {
-            return Integer.parseInt(raw.trim());
+            return Integer.parseInt(raw);
         } catch (NumberFormatException e) {
-            logger.warn("Invalid category.max.channels value '{}', using default 45", raw);
+            logger.warn("Ungültiger Wert für category.max.channels '{}', verwende Standard 45", raw);
             return 45;
         }
     }
 
-    /** Optional: role IDs that are always allowed to join locked channels. */
     public List<Long> getBypassRoleIds() {
-        String raw = props.get("bypass.role.ids").orElse(null);
-        if (raw == null || raw.isBlank()) return List.of();
+        String raw = getOptional("bypass.role.ids");
+        if (raw == null) return List.of();
         return Arrays.stream(raw.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
